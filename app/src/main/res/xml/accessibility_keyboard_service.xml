@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Accessibility service configuration for PhysicalKeyboardAccessibilityService.
+
+  FLAG_REQUEST_FILTER_KEY_EVENTS is the critical flag: it grants the service
+  the ability to intercept physical keyboard events (including the Windows/Meta
+  key, Alt+Tab, and other system shortcuts) before Android consumes them.
+
+  This lets Moonlight forward those keystrokes to the remote PC instead of
+  having the local Android system handle them.
+
+  canRequestFilterKeyEvents must be "true" here AND the
+  android.permission.BIND_ACCESSIBILITY_SERVICE permission must be declared
+  in AndroidManifest.xml (it is granted implicitly when the user enables the
+  service in Android Settings → Accessibility).
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_description"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="100"
+    android:canRequestFilterKeyEvents="true"
+    android:settingsActivity="com.limelight.preferences.StreamSettings" />

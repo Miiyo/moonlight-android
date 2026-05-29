@@ -300,4 +300,13 @@
     <string name="analogscroll_none">None (both sticks move the mouse)</string>
     <string name="analogscroll_right">Right analog stick</string>
     <string name="analogscroll_left">Left analog stick</string>
+
+    <!-- Physical keyboard accessibility service -->
+    <string name="accessibility_service_description">Allows Moonlight to capture physical keyboard meta keys (Windows key, Alt+Tab, Ctrl+Alt+Del, etc.) and forward them to your remote PC during streaming. This service only intercepts keys while a Moonlight stream is active.</string>
+    <string name="title_accessibility_keyboard">Physical keyboard meta key support</string>
+    <string name="summary_accessibility_keyboard_disabled">Enable in Accessibility settings to capture Windows key, Alt+Tab, and other system shortcuts</string>
+    <string name="summary_accessibility_keyboard_enabled">Meta keys (Windows, Alt+Tab, etc.) will be forwarded to your PC during streaming</string>
+    <string name="accessibility_keyboard_enable_prompt">To forward the Windows key, Alt+Tab, and other system shortcuts to your PC, enable the Moonlight Keyboard service in Android Accessibility Settings.\n\nThis service only intercepts keys while you are actively streaming.</string>
+    <string name="accessibility_open_settings">Open Accessibility Settings</string>
+    <string name="accessibility_keyboard_not_supported">Physical keyboard meta key capture requires Android 4.1 or later.</string>
 </resources>

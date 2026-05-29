@@ -144,6 +144,11 @@
             android:title="@string/title_checkbox_absolute_mouse_mode"
             android:summary="@string/summary_checkbox_absolute_mouse_mode"
             android:defaultValue="false" />
+        <Preference
+            android:key="pref_accessibility_keyboard"
+            android:title="@string/title_accessibility_keyboard"
+            android:summary="@string/summary_accessibility_keyboard_disabled"
+            android:persistent="false" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/category_on_screen_controls_settings"
         android:key="category_onscreen_controls">

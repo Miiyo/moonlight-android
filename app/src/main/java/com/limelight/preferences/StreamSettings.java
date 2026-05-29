@@ -2,6 +2,7 @@ package com.limelight.preferences;
 
 import android.content.Context;
 import android.content.Intent;
+import android.provider.Settings;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -28,6 +29,7 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 
 import com.limelight.LimeLog;
+import com.limelight.binding.input.PhysicalKeyboardAccessibilityService;
 import com.limelight.PcView;
 import com.limelight.R;
 import com.limelight.binding.video.MediaCodecHelper;
@@ -268,6 +270,43 @@ public class StreamSettings extends Activity {
             View view = super.onCreateView(inflater, container, savedInstanceState);
             UiHelper.applyStatusBarPadding(view);
             return view;
+        }
+
+        /**
+         * Updates the summary of the accessibility keyboard preference to reflect
+         * whether the service is currently enabled in Android Settings.
+         */
+        @Override
+        public void onResume() {
+            super.onResume();
+            Preference accessibilityKeyPref = findPreference("pref_accessibility_keyboard");
+            if (accessibilityKeyPref != null) {
+                updateAccessibilityKeyPreferenceSummary(accessibilityKeyPref);
+            }
+        }
+
+        private void updateAccessibilityKeyPreferenceSummary(Preference pref) {
+            boolean enabled = isAccessibilityKeyServiceEnabled();
+            pref.setSummary(enabled
+                    ? getString(R.string.summary_accessibility_keyboard_enabled)
+                    : getString(R.string.summary_accessibility_keyboard_disabled));
+        }
+
+        private boolean isAccessibilityKeyServiceEnabled() {
+            try {
+                Context ctx = getActivity();
+                int enabled = Settings.Secure.getInt(ctx.getContentResolver(),
+                        Settings.Secure.ACCESSIBILITY_ENABLED, 0);
+                if (enabled == 0) return false;
+                String services = Settings.Secure.getString(ctx.getContentResolver(),
+                        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+                if (services == null) return false;
+                String target = ctx.getPackageName() + "/" +
+                        PhysicalKeyboardAccessibilityService.class.getName();
+                return services.contains(target);
+            } catch (Exception e) {
+                return false;
+            }
         }
 
         @Override
@@ -550,6 +589,31 @@ public class StreamSettings extends Activity {
 
             // Android L introduces the drop duplicate behavior of releaseOutputBuffer()
             // that the unlock FPS option relies on to not massively increase latency.
+            // Accessibility keyboard preference: show current state and open settings on click
+            final Preference accessibilityKeyPref = findPreference("pref_accessibility_keyboard");
+            if (accessibilityKeyPref != null) {
+                updateAccessibilityKeyPreferenceSummary(accessibilityKeyPref);
+                accessibilityKeyPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getActivity());
+                        builder.setTitle(R.string.title_accessibility_keyboard);
+                        builder.setMessage(R.string.accessibility_keyboard_enable_prompt);
+                        builder.setPositiveButton(R.string.accessibility_open_settings, new android.content.DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(android.content.DialogInterface dialog, int which) {
+                                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                            }
+                        });
+                        builder.setNegativeButton(android.R.string.cancel, null);
+                        builder.show();
+                        return true;
+                    }
+                });
+            }
+
             findPreference(PreferenceConfiguration.UNLOCK_FPS_STRING).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {

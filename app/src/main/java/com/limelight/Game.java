@@ -5,6 +5,7 @@ import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.audio.AndroidAudioRenderer;
 import com.limelight.binding.input.ControllerHandler;
 import com.limelight.binding.input.KeyboardTranslator;
+import com.limelight.binding.input.PhysicalKeyboardAccessibilityService;
 import com.limelight.binding.input.capture.InputCaptureManager;
 import com.limelight.binding.input.capture.InputCaptureProvider;
 import com.limelight.binding.input.touch.AbsoluteTouchContext;
@@ -45,7 +46,10 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.provider.Settings;
 import android.content.ServiceConnection;
+import android.content.BroadcastReceiver;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -111,6 +115,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private ControllerHandler controllerHandler;
     private KeyboardTranslator keyboardTranslator;
+
+    // Accessibility service integration for physical keyboard meta-key capture
+    private BroadcastReceiver accessibilityKeyReceiver;
     private VirtualController virtualController;
 
     private PreferenceConfiguration prefConfig;
@@ -701,6 +708,122 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Accessibility service meta-key capture helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Checks whether the PhysicalKeyboardAccessibilityService is currently
+     * enabled in Android Settings.
+     */
+    private boolean isAccessibilityKeyServiceEnabled() {
+        try {
+            int enabled = Settings.Secure.getInt(getContentResolver(),
+                    Settings.Secure.ACCESSIBILITY_ENABLED, 0);
+            if (enabled == 0) return false;
+
+            String services = Settings.Secure.getString(getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (services == null) return false;
+
+            String serviceComponent = getPackageName() + "/" +
+                    PhysicalKeyboardAccessibilityService.class.getName();
+            return services.contains(serviceComponent);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Registers a local broadcast receiver to receive key events forwarded by
+     * the accessibility service, then notifies the service that streaming has
+     * started.  If the service is not enabled, this is a no-op (the normal
+     * Samsung meta-key capture path is still attempted).
+     */
+    private void startAccessibilityKeyCapture() {
+        if (!isAccessibilityKeyServiceEnabled()) {
+            LimeLog.info("PhysicalKeyboardAccessibilityService not enabled – skipping meta key capture");
+            return;
+        }
+
+        if (accessibilityKeyReceiver != null) {
+            // Already registered
+            return;
+        }
+
+        accessibilityKeyReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (!PhysicalKeyboardAccessibilityService.ACTION_KEY_EVENT.equals(intent.getAction())) {
+                    return;
+                }
+
+                int action      = intent.getIntExtra(PhysicalKeyboardAccessibilityService.EXTRA_KEY_ACTION, -1);
+                int keyCode     = intent.getIntExtra(PhysicalKeyboardAccessibilityService.EXTRA_KEY_CODE, KeyEvent.KEYCODE_UNKNOWN);
+                int metaState   = intent.getIntExtra(PhysicalKeyboardAccessibilityService.EXTRA_META_STATE, 0);
+                int deviceId    = intent.getIntExtra(PhysicalKeyboardAccessibilityService.EXTRA_DEVICE_ID, -1);
+                int repeatCount = intent.getIntExtra(PhysicalKeyboardAccessibilityService.EXTRA_REPEAT_COUNT, 0);
+                long eventTime  = intent.getLongExtra(PhysicalKeyboardAccessibilityService.EXTRA_EVENT_TIME, 0);
+
+                if (action == -1 || keyCode == KeyEvent.KEYCODE_UNKNOWN) return;
+
+                // Reconstruct a KeyEvent so we can reuse the existing
+                // handleKeyDown / handleKeyUp translation path.
+                KeyEvent event = new KeyEvent(
+                        eventTime, eventTime,
+                        action, keyCode, repeatCount,
+                        metaState, deviceId, 0,
+                        KeyEvent.FLAG_FROM_SYSTEM);
+
+                if (action == KeyEvent.ACTION_DOWN) {
+                    handleKeyDown(event);
+                } else if (action == KeyEvent.ACTION_UP) {
+                    handleKeyUp(event);
+                }
+            }
+        };
+
+        IntentFilter filter = new IntentFilter(PhysicalKeyboardAccessibilityService.ACTION_KEY_EVENT);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(accessibilityKeyReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(accessibilityKeyReceiver, filter);
+        }
+
+        // Tell the service a stream is active
+        Intent startIntent = new Intent(PhysicalKeyboardAccessibilityService.ACTION_STREAMING_START);
+        startIntent.setPackage(getPackageName());
+        sendBroadcast(startIntent);
+
+        LimeLog.info("PhysicalKeyboardAccessibilityService: meta key capture started");
+    }
+
+    /**
+     * Notifies the accessibility service that the stream has ended and
+     * unregisters the local broadcast receiver.
+     */
+    private void stopAccessibilityKeyCapture() {
+        // Tell the service to stop capturing
+        try {
+            Intent stopIntent = new Intent(PhysicalKeyboardAccessibilityService.ACTION_STREAMING_STOP);
+            stopIntent.setPackage(getPackageName());
+            sendBroadcast(stopIntent);
+        } catch (Exception e) {
+            // Ignore – the service may already be gone
+        }
+
+        if (accessibilityKeyReceiver != null) {
+            try {
+                unregisterReceiver(accessibilityKeyReceiver);
+            } catch (Exception e) {
+                // Ignore
+            }
+            accessibilityKeyReceiver = null;
+            LimeLog.info("PhysicalKeyboardAccessibilityService: meta key capture stopped");
+        }
+    }
+
     @Override
     public void onUserLeaveHint() {
         super.onUserLeaveHint();
@@ -1032,6 +1155,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (controllerHandler != null) {
             controllerHandler.destroy();
         }
+
+        // Unregister the accessibility key receiver and notify the service
+        stopAccessibilityKeyCapture();
         if (keyboardTranslator != null) {
             InputManager inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
             inputManager.unregisterInputDeviceListener(keyboardTranslator);
@@ -2288,6 +2414,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 // Ungrab input
                 setInputGrabState(false);
 
+                // Stop accessibility-based meta key capture
+                stopAccessibilityKeyCapture();
+
                 if (!displayedFailureDialog) {
                     displayedFailureDialog = true;
                     LimeLog.severe("Connection terminated: " + errorCode);
@@ -2395,6 +2524,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 connected = true;
                 connecting = false;
                 updatePipAutoEnter();
+
+                // Notify the accessibility service that streaming is active so it
+                // begins intercepting physical keyboard meta keys (Windows key, Alt+Tab, etc.)
+                startAccessibilityKeyCapture();
 
                 // Hide the mouse cursor now after a short delay.
                 // Doing it before dismissing the spinner seems to be undone
