@@ -1,8 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Game" >
+    tools:context=".Game">
 
     <View
         android:id="@+id/backgroundTouchView"
@@ -22,32 +23,154 @@
         <requestFocus />
     </com.limelight.ui.StreamView>
 
+    <!-- Legacy text overlay (hidden) -->
     <TextView
         android:id="@+id/performanceOverlay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_gravity="left"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:gravity="left"
-        android:background="#80000000"
-        android:preferKeepClear="true"
         android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/notificationOverlay"
+    <!-- M3 Pill stats overlay -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/pillOverlay"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="16dp"
+        android:preferKeepClear="true"
+        android:visibility="gone"
+        app:cardBackgroundColor="#CC1C1B1F"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="4dp"
+        app:strokeColor="#408B5CF6"
+        app:strokeWidth="1dp"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp">
+
+            <!-- FPS -->
+            <ImageView
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:src="@drawable/ic_pill_fps"
+                android:tint="#FFFFFFFF"
+                android:layout_marginEnd="4dp" />
+            <TextView
+                android:id="@+id/pillFps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:text="-- fps" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="#508B5CF6" />
+
+            <!-- Latency -->
+            <ImageView
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:src="@drawable/ic_pill_latency"
+                android:tint="#FFFFFFFF"
+                android:layout_marginEnd="4dp" />
+            <TextView
+                android:id="@+id/pillLatency"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:text="-- ms" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="#508B5CF6" />
+
+            <!-- Ping -->
+            <ImageView
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:src="@drawable/ic_pill_ping"
+                android:tint="#FFFFFFFF"
+                android:layout_marginEnd="4dp" />
+            <TextView
+                android:id="@+id/pillPing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:text="-- ms" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="#508B5CF6" />
+
+            <!-- Battery -->
+            <ImageView
+                android:id="@+id/pillBatteryIcon"
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:src="@drawable/ic_pill_battery"
+                android:tint="#FFFFFFFF"
+                android:layout_marginEnd="4dp" />
+            <TextView
+                android:id="@+id/pillBattery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFFFF"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:text="--%"/>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- M3 notification snackbar-style overlay -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/notificationOverlayCard"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginRight="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_gravity="right"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:gravity="right"
-        android:background="#80000000"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:preferKeepClear="true"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:cardBackgroundColor="#CC36343B"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="6dp"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+        <TextView
+            android:id="@+id/notificationOverlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="#FFFFFFFF"
+            android:gravity="end"
+            android:visibility="gone" />
+
+    </com.google.android.material.card.MaterialCardView>
 
 </merge>

@@ -82,6 +82,10 @@ import android.widget.FrameLayout;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.LinearLayout;
+import android.widget.ImageView;
+import android.os.BatteryManager;
+import android.graphics.Color;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -153,6 +157,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private TextView notificationOverlayView;
     private int requestedNotificationOverlayVisibility = View.GONE;
     private TextView performanceOverlayView;
+
+    // Pill-style HUD overlay
+    private LinearLayout pillOverlayView;
+    private TextView pillFpsView;
+    private TextView pillLatencyView;
+    private TextView pillPingView;
+    private TextView pillBatteryView;
+    private ImageView pillBatteryIcon;
+    private Handler pillUpdateHandler;
+    private static final int PILL_UPDATE_INTERVAL_MS = 1000;
 
     private MediaCodecDecoderRenderer decoderRenderer;
     private boolean reportedCrash;
@@ -279,6 +293,15 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         performanceOverlayView = findViewById(R.id.performanceOverlay);
 
+        // Pill overlay views
+        pillOverlayView   = findViewById(R.id.pillOverlay);
+        pillFpsView       = findViewById(R.id.pillFps);
+        pillLatencyView   = findViewById(R.id.pillLatency);
+        pillPingView      = findViewById(R.id.pillPing);
+        pillBatteryView   = findViewById(R.id.pillBattery);
+        pillBatteryIcon   = findViewById(R.id.pillBatteryIcon);
+        pillUpdateHandler = new Handler();
+
         inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(this, this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -378,6 +401,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // Check if the user has enabled performance stats overlay
         if (prefConfig.enablePerfOverlay) {
             performanceOverlayView.setVisibility(View.VISIBLE);
+            pillOverlayView.setVisibility(View.VISIBLE);
+            startPillOverlayUpdates();
         }
 
         decoderRenderer = new MediaCodecDecoderRenderer(
@@ -604,6 +629,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
                 performanceOverlayView.setVisibility(View.GONE);
                 notificationOverlayView.setVisibility(View.GONE);
+                pillOverlayView.setVisibility(View.GONE);
 
                 // Disable sensors while in PiP mode
                 controllerHandler.disableSensors();
@@ -622,6 +648,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
                 if (prefConfig.enablePerfOverlay) {
                     performanceOverlayView.setVisibility(View.VISIBLE);
+                    pillOverlayView.setVisibility(View.VISIBLE);
                 }
 
                 notificationOverlayView.setVisibility(requestedNotificationOverlayVisibility);
@@ -1197,6 +1224,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     protected void onStop() {
         super.onStop();
+
+        // Stop pill overlay battery polling
+        if (pillUpdateHandler != null) {
+            pillUpdateHandler.removeCallbacks(pillBatteryRunnable);
+        }
 
         SpinnerDialog.closeDialogs(this);
         Dialog.closeDialogs();
@@ -2775,8 +2807,105 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             @Override
             public void run() {
                 performanceOverlayView.setText(text);
+                updatePillOverlayFromPerfText(text);
             }
         });
+    }
+
+    /**
+     * Parses the multi-line perf text produced by MediaCodecDecoderRenderer and
+     * pushes FPS, latency and ping values into the pill overlay.
+     *
+     * Expected lines (from R.string.perf_overlay_*):
+     *   "Stream: 1920x1080 60.0 fps"
+     *   "Decoder: ..."
+     *   "Incoming: 59.8 fps"
+     *   "Rendering: 59.6 fps"
+     *   "Net drops: 0.0%"
+     *   "Net latency: 12 ms (variance 3 ms)"
+     *   "Decode time: 4.2 ms"
+     */
+    private void updatePillOverlayFromPerfText(String text) {
+        if (text == null || pillOverlayView == null) return;
+        String[] lines = text.split("\n");
+        for (String line : lines) {
+            String lower = line.toLowerCase(Locale.ROOT);
+            // Rendering FPS  (prefer rendered over incoming)
+            if (lower.contains("render") && lower.contains("fps")) {
+                String fps = extractFirstNumber(line);
+                if (fps != null) pillFpsView.setText(fps + " fps");
+            }
+            // Decode latency
+            else if (lower.contains("decode time") || lower.contains("hw latency")
+                    || lower.contains("client latency")) {
+                String ms = extractFirstNumber(line);
+                if (ms != null) pillLatencyView.setText(ms + " ms");
+            }
+            // Network RTT / ping
+            else if (lower.contains("net latency")) {
+                String ms = extractFirstNumber(line);
+                if (ms != null) pillPingView.setText(ms + " ms");
+            }
+        }
+    }
+
+    /** Returns the first integer-or-decimal number found in {@code s}, or null. */
+    private String extractFirstNumber(String s) {
+        StringBuilder sb = new StringBuilder();
+        boolean inNum = false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (Character.isDigit(c) || (c == '.' && inNum)) {
+                sb.append(c);
+                inNum = true;
+            } else if (inNum) {
+                break;
+            }
+        }
+        return inNum ? sb.toString() : null;
+    }
+
+    /** Starts a repeating Runnable that refreshes the battery field in the pill. */
+    private void startPillOverlayUpdates() {
+        pillUpdateHandler.post(pillBatteryRunnable);
+    }
+
+    private final Runnable pillBatteryRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updatePillBattery();
+            pillUpdateHandler.postDelayed(this, PILL_UPDATE_INTERVAL_MS);
+        }
+    };
+
+    private void updatePillBattery() {
+        if (pillBatteryView == null) return;
+        android.content.Intent batteryStatus = registerReceiver(null,
+                new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        if (batteryStatus == null) return;
+
+        int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+        int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+        if (level < 0 || scale <= 0) return;
+
+        int pct = (int)(level / (float) scale * 100);
+        pillBatteryView.setText(pct + "%");
+
+        // Colour-code: green ≥ 50 %, yellow ≥ 20 %, red < 20 %
+        int colour;
+        if (pct >= 50)      colour = Color.parseColor("#66FF66");
+        else if (pct >= 20) colour = Color.parseColor("#FFD966");
+        else                colour = Color.parseColor("#FF5555");
+        pillBatteryView.setTextColor(colour);
+        if (pillBatteryIcon != null) pillBatteryIcon.setColorFilter(colour);
+
+        // Show a charging bolt tint when plugged in
+        boolean isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING
+                || status == BatteryManager.BATTERY_STATUS_FULL);
+        if (isCharging && pillBatteryIcon != null) {
+            pillBatteryIcon.setColorFilter(Color.parseColor("#66FF66"));
+        }
     }
 
     @Override

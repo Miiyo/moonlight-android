@@ -1,7 +1,8 @@
 package com.limelight.utils;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.app.GameManager;
 import android.app.GameState;
 import android.app.LocaleManager;
@@ -224,7 +225,7 @@ public class UiHelper {
             }
         };
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(parent);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(parent);
         builder.setMessage(parent.getResources().getString(R.string.applist_quit_confirmation))
                 .setPositiveButton(parent.getResources().getString(R.string.yes), dialogClickListener)
                 .setNegativeButton(parent.getResources().getString(R.string.no), dialogClickListener)
@@ -251,7 +252,7 @@ public class UiHelper {
             }
         };
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(parent);
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(parent);
         builder.setMessage(parent.getResources().getString(R.string.delete_pc_msg))
                 .setTitle(computer.name)
                 .setPositiveButton(parent.getResources().getString(R.string.yes), dialogClickListener)

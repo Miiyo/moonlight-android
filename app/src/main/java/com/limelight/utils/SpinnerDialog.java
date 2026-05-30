@@ -4,117 +4,104 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.TextView;
 
-public class SpinnerDialog implements Runnable,OnCancelListener {
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
+import androidx.appcompat.app.AlertDialog;
+
+public class SpinnerDialog implements Runnable, DialogInterface.OnCancelListener {
     private final String title;
-    private final String message;
+    private String message;
     private final Activity activity;
-    private ProgressDialog progress;
+    private AlertDialog dialog;
+    private TextView messageView;
     private final boolean finish;
 
     private static final ArrayList<SpinnerDialog> rundownDialogs = new ArrayList<>();
 
-    private SpinnerDialog(Activity activity, String title, String message, boolean finish)
-    {
+    private SpinnerDialog(Activity activity, String title, String message, boolean finish) {
         this.activity = activity;
         this.title = title;
         this.message = message;
-        this.progress = null;
+        this.dialog = null;
         this.finish = finish;
     }
 
-    public static SpinnerDialog displayDialog(Activity activity, String title, String message, boolean finish)
-    {
+    public static SpinnerDialog displayDialog(Activity activity, String title, String message, boolean finish) {
         SpinnerDialog spinner = new SpinnerDialog(activity, title, message, finish);
         activity.runOnUiThread(spinner);
         return spinner;
     }
 
-    public static void closeDialogs(Activity activity)
-    {
+    public static void closeDialogs(Activity activity) {
         synchronized (rundownDialogs) {
             Iterator<SpinnerDialog> i = rundownDialogs.iterator();
             while (i.hasNext()) {
-                SpinnerDialog dialog = i.next();
-                if (dialog.activity == activity) {
+                SpinnerDialog d = i.next();
+                if (d.activity == activity) {
                     i.remove();
-                    if (dialog.progress.isShowing()) {
-                        dialog.progress.dismiss();
+                    if (d.dialog != null && d.dialog.isShowing()) {
+                        d.dialog.dismiss();
                     }
                 }
             }
         }
     }
 
-    public void dismiss()
-    {
-        // Running again with progress != null will destroy it
+    public void dismiss() {
         activity.runOnUiThread(this);
     }
 
-    public void setMessage(final String message)
-    {
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                progress.setMessage(message);
+    public void setMessage(final String msg) {
+        activity.runOnUiThread(() -> {
+            this.message = msg;
+            if (messageView != null) {
+                messageView.setText(msg);
             }
         });
     }
 
     @Override
     public void run() {
-
-        // If we're dying, don't bother doing anything
-        if (activity.isFinishing()) {
-            return;
-        }
-
-        if (progress == null)
-        {
-            progress = new ProgressDialog(activity);
-
-            progress.setTitle(title);
-            progress.setMessage(message);
-            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progress.setOnCancelListener(this);
-
-            // If we want to finish the activity when this is killed, make it cancellable
-            if (finish)
-            {
-                progress.setCancelable(true);
-                progress.setCanceledOnTouchOutside(false);
-            }
-            else
-            {
-                progress.setCancelable(false);
-            }
-
-            synchronized (rundownDialogs) {
-                rundownDialogs.add(this);
-                progress.show();
-            }
-        }
-        else
-        {
-            synchronized (rundownDialogs) {
-                if (rundownDialogs.remove(this) && progress.isShowing()) {
-                    progress.dismiss();
+        synchronized (rundownDialogs) {
+            if (dialog != null) {
+                // Second call = dismiss
+                if (dialog.isShowing()) {
+                    dialog.dismiss();
                 }
+                rundownDialogs.remove(this);
+                if (finish) {
+                    activity.finish();
+                }
+                return;
             }
+
+            // Build a Material 3 loading dialog with circular indicator
+            View contentView = LayoutInflater.from(activity)
+                    .inflate(android.R.layout.activity_list_item, null);
+
+            dialog = new MaterialAlertDialogBuilder(activity)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setCancelable(finish)
+                    .setOnCancelListener(this)
+                    .show();
+
+            rundownDialogs.add(this);
         }
     }
 
     @Override
-    public void onCancel(DialogInterface dialog) {
+    public void onCancel(DialogInterface dialogInterface) {
         synchronized (rundownDialogs) {
             rundownDialogs.remove(this);
         }
-
-        // This will only be called if finish was true, so we don't need to check again
-        activity.finish();
+        if (finish) {
+            activity.finish();
+        }
     }
 }

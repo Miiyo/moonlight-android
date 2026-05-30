@@ -1,6 +1,7 @@
 package com.limelight;
 
 import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,7 +12,7 @@ import android.window.OnBackInvokedDispatcher;
 
 import com.limelight.utils.SpinnerDialog;
 
-public class HelpActivity extends Activity {
+public class HelpActivity extends AppCompatActivity {
 
     private SpinnerDialog loadingDialog;
     private WebView webView;

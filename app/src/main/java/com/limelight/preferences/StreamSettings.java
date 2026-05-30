@@ -10,6 +10,8 @@ import android.media.MediaCodecInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.preference.CheckBoxPreference;
@@ -39,7 +41,7 @@ import com.limelight.utils.UiHelper;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-public class StreamSettings extends Activity {
+public class StreamSettings extends AppCompatActivity {
     private PreferenceConfiguration previousPrefs;
     private int previousDisplayPixelCount;
 
@@ -596,7 +598,7 @@ public class StreamSettings extends Activity {
                 accessibilityKeyPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getActivity());
+                        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getActivity());
                         builder.setTitle(R.string.title_accessibility_keyboard);
                         builder.setMessage(R.string.accessibility_keyboard_enable_prompt);
                         builder.setPositiveButton(R.string.accessibility_open_settings, new android.content.DialogInterface.OnClickListener() {

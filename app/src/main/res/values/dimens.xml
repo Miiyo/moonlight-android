@@ -1,9 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <!-- Default screen margins, per the Android Design guidelines. -->
+    <!-- Screen margins -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
+
+    <!-- TV channel logo -->
     <dimen name="tv_channel_logo_width">80dp</dimen>
     <dimen name="tv_channel_logo_height">80dp</dimen>
 
+    <!-- M3 card corner radii -->
+    <dimen name="card_corner_radius_large">16dp</dimen>
+    <dimen name="card_corner_radius_medium">12dp</dimen>
+    <dimen name="card_corner_radius_small">8dp</dimen>
+
+    <!-- Grid item sizes -->
+    <dimen name="pc_grid_item_size">148dp</dimen>
+    <dimen name="app_grid_item_width">152dp</dimen>
+    <dimen name="app_grid_item_height">200dp</dimen>
+    <dimen name="app_grid_item_small_width">104dp</dimen>
+    <dimen name="app_grid_item_small_height">138dp</dimen>
+
+    <!-- Toolbar icon touch target -->
+    <dimen name="toolbar_icon_size">48dp</dimen>
+
+    <!-- M3 spacing tokens -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
 </resources>

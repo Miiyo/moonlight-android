@@ -1,37 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!--
-        Base application theme, dependent on API level. This theme is replaced
-        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
-
-    -->
-    <style name="AppBaseTheme" parent="android:Theme">
-        <!--
-            Theme customizations available in newer API levels can go in
-            res/values-vXX/styles.xml, while customizations related to
-            backward-compatibility can go here.
-
-        -->
+    <!-- Base theme: MaterialComponents dark (M3 compat via AppCompat) -->
+    <style name="AppBaseTheme" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/md_theme_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/md_theme_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_onTertiaryContainer</item>
+        <item name="colorError">@color/md_theme_error</item>
+        <item name="colorOnError">@color/md_theme_onError</item>
+        <item name="colorErrorContainer">@color/md_theme_errorContainer</item>
+        <item name="colorOnErrorContainer">@color/md_theme_onErrorContainer</item>
+        <item name="android:colorBackground">@color/md_theme_background</item>
+        <item name="colorOnBackground">@color/md_theme_onBackground</item>
+        <item name="colorSurface">@color/md_theme_surface</item>
+        <item name="colorOnSurface">@color/md_theme_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_onSurfaceVariant</item>
+        <item name="colorOutline">@color/md_theme_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_outlineVariant</item>
+        <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest</item>
+        <item name="android:statusBarColor">@color/md_theme_surfaceContainerLow</item>
+        <item name="android:navigationBarColor">@color/md_theme_surfaceContainerLow</item>
     </style>
 
-    <!-- Application theme. -->
+    <!-- Application theme -->
     <style name="AppTheme" parent="AppBaseTheme">
-        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>
 
+    <!-- Streaming activity: transparent background -->
     <style name="StreamBaseTheme" parent="AppBaseTheme">
-        <!-- Transparent streaming background to avoid extra overdraw -->
         <item name="android:windowBackground">@android:color/transparent</item>
-    </style>
-
-    <!-- Stream activity theme -->
-    <style name="StreamTheme" parent="StreamBaseTheme">
-        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="StreamTheme" parent="StreamBaseTheme">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <!-- M3 Card style -->
+    <style name="M3Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/md_theme_surfaceContainerHigh</item>
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">@color/md_theme_outlineVariant</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <!-- M3 Filled Button -->
+    <style name="M3Button.Filled" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/md_theme_primary</item>
+        <item name="android:textColor">@color/md_theme_onPrimary</item>
+        <item name="cornerRadius">20dp</item>
+    </style>
+
+    <!-- M3 Text Button -->
+    <style name="M3Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/md_theme_primary</item>
+    </style>
+
+    <!-- M3 OutlinedTextField -->
+    <style name="M3TextField" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/md_theme_outline</item>
+        <item name="hintTextColor">@color/md_theme_onSurfaceVariant</item>
+        <item name="android:textColorHint">@color/md_theme_onSurfaceVariant</item>
     </style>
 
 </resources>
+
+    <!-- M3-styled Preferences -->
+    <style name="M3PreferenceTheme" parent="PreferenceThemeOverlay.v14.Material">
+        <item name="preferenceBackgroundColor">@color/md_theme_surfaceContainerHigh</item>
+        <item name="android:textColorPrimary">@color/md_theme_onSurface</item>
+        <item name="android:textColorSecondary">@color/md_theme_onSurfaceVariant</item>
+    </style>
